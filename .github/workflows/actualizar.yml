@@ -1,0 +1,26 @@
+name: Actualizar precios
+
+on:
+  schedule:
+    - cron: "0 9 * * *"   # todos los días a las 6:00 (hora argentina)
+  workflow_dispatch:       # botón para correrlo a mano
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Leer precios de la tienda
+        run: LANG=C.UTF-8 ruby -E UTF-8 archivos/actualizar.rb
+
+      - name: Guardar cambios
+        run: |
+          git config user.name "robot-precios"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Precios actualizados $(date +%d/%m/%Y)"
+          git push
