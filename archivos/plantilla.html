@@ -152,6 +152,8 @@ nav.foot .wrap{display:flex;gap:10px;justify-content:space-between}
 .step-anim{animation:in .3s ease both}
 @keyframes in{from{transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.step-anim{animation:none}.bar i{transition:none}}
+/* Cartel "Powered by Netlify" que agrega Netlify: tapa los botones de abajo en el celular */
+#nl-badge-frame{display:none!important}
 </style>
 </head>
 <body>
@@ -197,13 +199,17 @@ $("#waTop").href = waLink("Hola! Estoy buscando fundas para los asientos de mi a
 
 /* ===== Catálogo =====
    Lo genera archivos/actualizar.rb leyendo la tienda: precios, stock, fotos y colores.
-   FUNDAS: {clave: {n, p, c, tr, q, tras, pz, mat, col, universal, extra, logo, u, img}}
+   FUNDAS: {clave: {n, p, c, tr, q, cat, marca, principal, tras, pz, mat, col, extra, logo, u, img}}
+     cat: "especial" (las de $58.500, a medida y repartidas) | "universal" (las de $45.000)
+     marca: la universal de esa marca (null = universal genérica, sin logo, para cualquier vehículo con trasero entero)
    ACCESORIOS: [{n, p, c, tr, q, u, img}]
    NUEVOS: fundas nuevas de la tienda que el robot asignó solo a un modelo: {clave: [[marca, modelo], ...]} */
 __DATA__
 
 /* ===== Marcas y modelos =====
-   t: tipo de vehículo (auto | suv | pickup | util)   f: fundas a medida para ese modelo */
+   t: tipo de vehículo (auto | suv | pickup | util)
+   f: fundas cuya ficha nombra a ese modelo (especiales y universales de marca). Si un modelo no tiene
+      universal de marca, con trasero entero se le recomienda la universal genérica. */
 const MARCAS = {
   "Ford":[
     {m:"Fiesta",t:"auto",f:["fordEnt"]},{m:"Ka",t:"auto",f:["fordEnt"]},{m:"Focus (hasta 2013)",t:"auto",f:["fordEnt"]},
@@ -212,7 +218,7 @@ const MARCAS = {
     {m:"Ranger",t:"pickup",f:["ranger"]},{m:"Maverick",t:"pickup",f:[]},{m:"Transit",t:"util",f:[]}],
   "Fiat":[
     {m:"Palio",t:"auto",f:["fiatEnt"]},{m:"Siena",t:"auto",f:["fiatEnt"]},{m:"Uno",t:"auto",f:["fiatEnt"]},{m:"Duna",t:"auto",f:["fiatEnt"]},
-    {m:"147",t:"auto",f:["fiatEnt"]},{m:"Mobi",t:"auto",f:["mobi"]},{m:"Cronos",t:"auto",f:[]},{m:"Argo",t:"auto",f:[]},
+    {m:"147",t:"auto",f:["fiatEnt"]},{m:"125",t:"auto",f:["fiatEnt"]},{m:"Regata",t:"auto",f:["fiatEnt"]},{m:"Mobi",t:"auto",f:["mobi"]},{m:"Cronos",t:"auto",f:[]},{m:"Argo",t:"auto",f:[]},
     {m:"Pulse",t:"suv",f:[]},{m:"Fastback",t:"suv",f:[]},{m:"Strada",t:"pickup",f:[]},{m:"Toro",t:"pickup",f:[]},
     {m:"Fiorino",t:"util",f:[]},{m:"Doblò",t:"util",f:[]}],
   "Chevrolet":[
@@ -222,9 +228,10 @@ const MARCAS = {
     {m:"Tracker",t:"suv",f:[]},{m:"S10",t:"pickup",f:[]},{m:"Montana",t:"pickup",f:[]}],
   "Volkswagen":[
     {m:"Gol Trend",t:"auto",f:["vwGol"]},{m:"Voyage",t:"auto",f:["vwGol"]},{m:"Bora",t:"auto",f:["vwBora"]},{m:"Vento",t:"auto",f:["vwBora"]},
-    {m:"Suran",t:"auto",f:["vwSuran"]},{m:"Fox",t:"auto",f:["vwSuran"]},{m:"Gol (modelo anterior)",t:"auto",f:[]},
+    {m:"Suran",t:"auto",f:["vwSuran"]},{m:"Suran Cross",t:"auto",f:["vwSuran"]},{m:"Fox",t:"auto",f:["vwSuran"]},{m:"Fox Cross",t:"auto",f:["vwSuran"]},
+    {m:"Gol (modelo anterior)",t:"auto",f:["vwGol"]},{m:"Senda",t:"auto",f:["vwGol"]},{m:"Polo Classic",t:"auto",f:["vwGol"]},{m:"Pointer",t:"auto",f:["vwGol"]},{m:"1500",t:"auto",f:["vwGol"]},
     {m:"Polo",t:"auto",f:[]},{m:"Virtus",t:"auto",f:[]},{m:"T-Cross",t:"suv",f:[]},{m:"Nivus",t:"suv",f:[]},{m:"Taos",t:"suv",f:[]},
-    {m:"Amarok",t:"pickup",f:["vwBora"]},{m:"Saveiro",t:"pickup",f:[]}],
+    {m:"Amarok",t:"pickup",f:["vwBora"]},{m:"Saveiro",t:"pickup",f:["vwGol"]}],
   "Renault":[
     {m:"Clio",t:"auto",f:["renEnt"]},{m:"Sandero",t:"auto",f:["renEnt"]},{m:"Mégane",t:"auto",f:["renEnt"]},{m:"R19",t:"auto",f:["renEnt"]},
     {m:"Sandero Stepway",t:"auto",f:["stepway"]},{m:"Fluence",t:"auto",f:["renAncha"]},{m:"Logan",t:"auto",f:[]},{m:"Kwid",t:"auto",f:[]},
@@ -255,20 +262,27 @@ const COLORES = {Negro:"#151515",Gris:"#8A8C8E",Azul:"#1E4FA3",Rojo:"#C62828",Bl
 const A = { tipo:null, marca:null, modelo:null, trasero:null, uso:[], nota:"", color:null };
 const modeloSel = ()=> (MARCAS[A.marca]||[]).find(x=>x.m===A.modelo) || null;
 const fundasModelo = ()=> (modeloSel()?.f || []).filter(k=>FUNDAS[k]).map(k=>({k, ...FUNDAS[k]}));
-const sinAMedida = ()=> !!A.modelo && !fundasModelo().length;
+const especiales = ()=> fundasModelo().filter(x=>x.cat==="especial");
+/* Universal que le corresponde: la de su marca si la ficha nombra al modelo; si no, la genérica (sin logo) */
+function universalGenerica(){
+  const e = Object.entries(FUNDAS).find(([,v])=>v.cat==="universal" && !v.marca);
+  return e ? {k:e[0], ...e[1]} : null;
+}
+const universalModelo = ()=> fundasModelo().find(x=>x.cat==="universal") || universalGenerica();
 const autoTxt = ()=> A.marca==="Otra marca" || !A.marca ? (A.modelo||"tu vehículo") : `${A.marca} ${A.modelo}`;
 const seatIco = split => `<svg viewBox="0 0 64 40" aria-hidden="true">${split
   ? `<rect x="4" y="2" width="19" height="22" rx="4" fill="var(--accent)"/><rect x="26" y="2" width="34" height="22" rx="4" fill="var(--accent)"/><rect x="4" y="27" width="19" height="11" rx="3" fill="currentColor"/><rect x="26" y="27" width="34" height="11" rx="3" fill="currentColor"/>`
   : `<rect x="4" y="2" width="56" height="22" rx="4" fill="var(--accent)"/><rect x="4" y="27" width="56" height="11" rx="3" fill="currentColor"/>`}</svg>`;
 
 const STEPS = [
-  { id:"tipo", title:"¿Qué tipo de vehículo tenés?", lead:"Así te mostramos solo las fundas que le calzan.",
+  { id:"tipo", title:"¿Qué auto tenés?", lead:"Escribí el modelo y elegilo de la lista, o empezá por el tipo de vehículo.",
+    custom: renderTipo,
     opts:()=> Object.entries(TIPOS).map(([k,t])=>({v:k,b:t.label,s:t.s,ico:t.ico})) },
-  { id:"marca", title:"¿De qué marca es?", lead:"Fabricamos fundas a medida para los modelos más vendidos del país.",
+  { id:"marca", title:"¿De qué marca es?", lead:"Tenemos fundas universales de cada marca y especiales a medida para los modelos más vendidos.",
     opts:()=> Object.keys(MARCAS).map(b=>{
-      const n = MARCAS[b].filter(x=>x.t===A.tipo && x.f.length).length;
+      const n = MARCAS[b].filter(x=>x.t===A.tipo && x.f.some(k=>FUNDAS[k])).length;
       return b==="Otra marca" ? {v:b,b:"Otra marca",s:"Citroën, Nissan, Jeep, Honda…"}
-        : {v:b,b, s: n ? `${n} ${n===1?"modelo":"modelos"} con funda a medida` : "Funda universal o a consultar"};
+        : {v:b,b, s: n ? `${n} ${n===1?"modelo":"modelos"} con funda de ${b}` : "Funda universal o a consultar"};
     }), cls:"three" },
   { id:"modelo", title:()=> A.marca==="Otra marca" ? "¿Qué vehículo es?" : `¿Qué modelo de ${A.marca}?`,
     lead:()=> A.marca==="Otra marca" ? "Escribí marca y modelo, por ejemplo: Citroën C3, Nissan Versa." : "Elegí tu modelo. Si no aparece, escribilo abajo.",
@@ -284,9 +298,9 @@ const STEPS = [
       {v:"renovar", b:"Quiero tapar un tapizado gastado o roto"},
       {v:"cuidar",  b:"Quiero cuidar el tapizado nuevo"},
     ], cls:"one"},
-  { id:"color", when:()=> !!FUNDAS.universal && FUNDAS.universal.col.length>1 && sinAMedida() && A.trasero!=="dividido" && A.tipo!=="util", title:"¿De qué color la querés?",
-    lead:"La funda universal viene en varios colores. El negro es el más elegido: no se marca y combina con todo.",
-    opts:()=> FUNDAS.universal.col.map(c=>({v:c,b:c,sw:COLORES[c]||"#999",tag:c==="Negro"?"Más elegido":null})), cls:"three" },
+  { id:"color", when:()=>{ const R = recommend(); return R.modo!=="consulta" && (R.ideal.col||[]).length>1; }, title:"¿De qué color la querés?",
+    lead:"Viene en varios colores. El negro es el más elegido: no se marca y combina con todo.",
+    opts:()=> recommend().ideal.col.map(c=>({v:c,b:c,sw:COLORES[c]||"#999",tag:c==="Negro"?"Más elegido":null})), cls:"three" },
 ];
 
 /* ===== Navegación ===== */
@@ -342,14 +356,53 @@ function renderOpts(s, el){
     }
   }));
 }
+/* Paso 1: buscador de modelo (todas las marcas) + tipo de vehículo */
+const TODOS = Object.entries(MARCAS).flatMap(([marca, mods])=> mods.map(x=>({marca, ...x})));
+function buscarModelos(q){
+  const v = norm(q); if (v.length < 2) return [];
+  const pal = v.split(" ");
+  return TODOS.filter(x=>{ const t = norm(x.marca+" "+x.m); return pal.every(p=>t.includes(p)); })
+    .sort((a,b)=> (norm(b.m).startsWith(v)-norm(a.m).startsWith(v)) || (b.f.length-a.f.length))
+    .slice(0, 8);
+}
+function elegirModelo(marca, modelo, tipo){
+  A.tipo = tipo; A.marca = marca; A.modelo = modelo;
+  step = vis().findIndex(s=>s.id==="trasero"); render();
+}
+function renderTipo(el){
+  el.innerHTML = `<div class="search"><input id="qTodo" type="search" placeholder="Ej: Gol Trend, Ranger, 208…" autocomplete="off" aria-label="Buscar tu modelo"></div>
+    <div id="hits"></div>
+    <div class="group-t">O elegí el tipo de vehículo</div><div id="tipoOpts"></div>`;
+  renderOpts(STEPS[0], $("#tipoOpts"));
+  const q = $("#qTodo"), hits = $("#hits");
+  const pintar = ()=>{
+    const v = q.value.trim(), r = buscarModelos(v);
+    if (v.length < 2){ hits.innerHTML = ""; return; }
+    hits.innerHTML = (r.length ? `<p class="nota-help" style="margin:0 0 10px">${r.length===1?"Este resultado coincide":"Estos resultados coinciden"} con tu búsqueda:</p>
+      <div class="opts">${r.map((x,i)=>{ const esp = x.f.some(k=>FUNDAS[k]?.cat==="especial"), uni = x.f.some(k=>FUNDAS[k]?.cat==="universal");
+        return `<button type="button" class="opt" data-i="${i}">${esp?`<span class="tag hot">Especial</span>`:uni?`<span class="tag">${esc(x.marca)}</span>`:""}
+          <b>${esc(x.marca)} ${esc(x.m)}</b><small>${TIPOS[x.t].label}</small></button>`; }).join("")}</div>`
+      : `<div class="empty">No lo encontramos en la lista, pero igual te recomendamos.</div>`)
+      + `<p style="margin:10px 0 0"><button type="button" class="chip" id="usarTexto">Seguir con «${esc(v)}» ›</button></p>`;
+    hits.querySelectorAll("[data-i]").forEach(b=>b.addEventListener("click",()=>{ const x = r[+b.dataset.i]; elegirModelo(x.marca, x.m, x.t); }));
+    $("#usarTexto").addEventListener("click",()=>{
+      const marca = Object.keys(MARCAS).find(m=>m!=="Otra marca" && norm(v).startsWith(norm(m)+" "));
+      if (marca) elegirModelo(marca, v.slice(marca.length).trim(), "auto");
+      else elegirModelo("Otra marca", v, "auto");
+    });
+  };
+  q.addEventListener("input", pintar);
+  q.addEventListener("keydown", e=>{ if (e.key==="Enter"){ const r = buscarModelos(q.value); if (r.length) elegirModelo(r[0].marca, r[0].m, r[0].t); } });
+}
 function renderModelo(el){
   const all = MARCAS[A.marca];
   const otra = A.marca==="Otra marca";
   const mios = all.filter(x=>x.t===A.tipo), otros = all.filter(x=>x.t!==A.tipo);
   const known = all.some(x=>x.m===A.modelo);
-  const btn = x => `<button type="button" class="opt" data-v="${esc(x.m)}" aria-pressed="${A.modelo===x.m}">
-      ${x.f.length?`<span class="tag hot">A medida</span>`:""}<b>${esc(x.m)}</b>
-      <small>${x.f.length?"Funda especial para tu modelo":"Universal o a consultar"}</small></button>`;
+  const btn = x => { const esp = x.f.some(k=>FUNDAS[k]?.cat==="especial"), uni = x.f.some(k=>FUNDAS[k]?.cat==="universal");
+    return `<button type="button" class="opt" data-v="${esc(x.m)}" aria-pressed="${A.modelo===x.m}">
+      ${esp?`<span class="tag hot">Especial</span>`:uni?`<span class="tag">${esc(A.marca)}</span>`:""}<b>${esc(x.m)}</b>
+      <small>${esp&&uni?"Universal o especial":esp?"Especial a medida":uni?`Universal ${esc(A.marca)}`:"Universal genérica o a consultar"}</small></button>`; };
   el.innerHTML = (otra ? "" : `
     <div class="search"><input id="q" type="search" placeholder="Buscar modelo…" autocomplete="off" aria-label="Buscar modelo"></div>
     ${mios.length?`<div class="opts three" id="g1">${mios.map(btn).join("")}</div>`:""}
@@ -412,51 +465,52 @@ const NOTA_REGLAS = [
 function notaFlags(){ return NOTA_REGLAS.filter(r=>r.re.test(A.nota||"")); }
 function U(){ return [...new Set([...A.uso, ...notaFlags().map(r=>r.k)])]; }
 
+/* Especial ($58.500): hecha a medida del modelo; si es repartida, solo para trasero dividido.
+   Universal ($45.000): para trasero entero; la de su marca, o la genérica si la marca no tiene. */
 function recommend(){
-  const lista = fundasModelo();
-  const permiteUniversal = !!FUNDAS.universal && A.trasero!=="dividido" && A.tipo!=="util";
-  if (lista.length){
-    const calza = x => !x.tras || A.trasero==="nose" || x.tras===A.trasero;
-    let orden = [...lista].sort((a,b)=> (calza(b)-calza(a)) || (A.trasero==="nose" ? a.p-b.p : 0));
-    const ideal = orden[0];
-    const otra = orden[1] || null;
-    let eco = null;
-    if (permiteUniversal && ideal.p > FUNDAS.universal.p && !(otra && otra.p<=FUNDAS.universal.p))
-      eco = {k:"universal", ...FUNDAS.universal};
-    return {modo:"medida", ideal, otra, eco, calzaIdeal: calza(ideal)};
+  const esp = especiales();
+  const uni = (A.trasero!=="dividido" && A.tipo!=="util") ? universalModelo() : null;
+  const calza = x => !x.tras || A.trasero==="nose" || x.tras===A.trasero;
+  const ok = esp.filter(calza).sort((a,b)=> (a.tras===A.trasero?0:1) - (b.tras===A.trasero?0:1));
+  if (ok.length){
+    const ideal = ok[0];
+    /* Como opción más barata, solo la universal cuya ficha nombra al modelo (la genérica puede no calzar en butacas anchas) */
+    const propia = uni && uni.marca ? uni : null;
+    return {modo:"especial", ideal, otra: ok[1] || null, eco: propia && propia.p < ideal.p ? propia : null};
   }
-  if (permiteUniversal) return {modo:"universal", ideal:{k:"universal", ...FUNDAS.universal}};
+  if (uni) return {modo:"universal", ideal: uni, otra: A.trasero==="nose" ? (esp[0] || null) : null, eco: null};
   return {modo:"consulta"};
 }
 
 /* ===== Textos ===== */
 function whyList(x, R){
   const r = [], u = U();
-  if (x.universal){
-    r.push("Calza en vehículos con dos butacas delanteras y asiento trasero entero, con apoyacabezas desmontables.");
-    if (A.marca && A.marca!=="Otra marca" && A.modelo) r.push(`Todavía no tenemos una funda a medida para el ${esc(autoTxt())}: la universal es la opción que mejor le queda.`);
-    if (A.color) r.push(`La elegiste en ${A.color.toLowerCase()}. También viene en ${x.col.filter(c=>c!==A.color).join(", ").toLowerCase()}.`);
+  if (x.cat==="universal"){
+    r.push(x.marca
+      ? `Universal ${esc(x.marca)}: le queda a tu ${esc(autoTxt())} con asiento trasero entero.`
+      : "Universal: calza en vehículos con dos butacas delanteras y asiento trasero entero, con apoyacabezas desmontables.");
+    if (x.extra) r.push(x.extra);
+    if (x.logo) r.push("Con el logo de la marca bordado en el respaldo.");
   } else {
-    r.push(`Hecha a medida para el ${esc(autoTxt())}: calza justo, sin arrugas ni partes que se corran.`);
+    r.push(`Especial, hecha a medida para el ${esc(autoTxt())}: calza justo, sin arrugas ni partes que se corran.`);
     if (x.tras==="dividido") r.push("Repartida: el trasero viene cortado 1/3 – 2/3, así podés seguir rebatiendo el asiento.");
-    if (x.tras==="entero") r.push("Enteriza: pensada para asiento trasero de una sola pieza.");
+    if (x.tras==="entero") r.push("Enteriza: para asiento trasero de una sola pieza.");
     if (x.extra) r.push(x.extra);
     if (x.logo) r.push("Con el logo de la marca bordado en el respaldo.");
   }
+  if (A.color && (x.col||[]).includes(A.color) && x.col.length>1) r.push(`La elegiste en ${A.color.toLowerCase()}. También viene en ${x.col.filter(c=>c!==A.color).join(", ").toLowerCase()}.`);
   if (u.includes("mascotas") || u.includes("chicos")) r.push(`${x.mat.split(" ")[0]}: se limpia con un paño húmedo, ideal ${u.includes("mascotas")&&u.includes("chicos")?"con chicos y mascotas":u.includes("mascotas")?"si viajás con tu mascota":"con chicos a bordo"}.`);
   if (u.includes("trabajo")) r.push("Material resistente al uso diario: aguanta muchas horas de manejo y subidas y bajadas de pasajeros.");
   if (u.includes("renovar")) r.push("Cubre el tapizado completo: tapa roturas y manchas y el interior queda como nuevo.");
   if (u.includes("cuidar")) r.push("Protege el tapizado original del desgaste, el sol y las manchas.");
   if (x.pz) r.push(`Juego completo de ${x.pz} piezas, con ganchos de ajuste incluidos.`);
-  if (R && R.modo==="medida" && x===R.ideal && !R.calzaIdeal) r.push({warn:true, t:`Ojo: esta funda es ${x.tras==="entero"?"enteriza":"repartida"} y nos dijiste que tu trasero es ${A.trasero}. Consultanos antes de comprar.`});
-  if (!x.tras && !x.universal && A.trasero!=="nose") r.push({warn:true, t:"La ficha no aclara si el trasero es entero o dividido: confirmalo con un asesor antes de comprar."});
   if (u.includes("airbag")) r.push({warn:true, t:"Si tus butacas tienen airbag lateral, consultanos antes de comprar para confirmar que la funda no lo tape."});
-  if (u.includes("fijo") && x.universal) r.push({warn:true, t:"La universal está pensada para apoyacabezas desmontables. Con apoyacabeza fijo, consultanos."});
+  if (u.includes("fijo") && x.cat==="universal") r.push({warn:true, t:"La universal está pensada para apoyacabezas desmontables. Con apoyacabeza fijo, consultanos."});
   return r;
 }
 function card(x, kind, label, R){
   const off = x.c && x.c>x.p ? Math.round((1-x.p/x.c)*100) : 0;
-  const msg = `Hola! Usé el asistente de la web para mi ${autoTxt()} y me recomendó:\n*${x.n}*${x.universal&&A.color?` (color ${A.color.toLowerCase()})`:""} - ${money(x.p)}\n${TIENDA+x.u}\n\n¿Está disponible? ¿Cuánto sale el envío?`;
+  const msg = `Hola! Usé el asistente de la web para mi ${autoTxt()} y me recomendó:\n*${x.n}*${A.color&&(x.col||[]).includes(A.color)?` (color ${A.color.toLowerCase()})`:""} - ${money(x.p)}\n${TIENDA+x.u}\n\n¿Está disponible? ¿Cuánto sale el envío?`;
   const why = whyList(x, R);
   return `<article class="card ${kind}">
     ${kind==="ideal"?`<div class="head">Tu funda ideal</div>`:label?`<div class="alt-label">${label}</div>`:""}
@@ -464,7 +518,7 @@ function card(x, kind, label, R){
       <div class="pic"><img src="${x.img}" alt="${esc(x.n)}" loading="lazy"></div>
       <div style="min-width:0">
         <h3>${esc(x.n)}</h3>
-        <div class="meta">${x.universal?`<span>Universal</span>`:`<span class="fit">A medida</span>`}<span>${esc(x.mat)}</span>${x.tras?`<span>Trasero ${x.tras}</span>`:""}${x.pz?`<span>${x.pz} piezas</span>`:""}</div>
+        <div class="meta">${x.cat==="universal"?`<span>Universal${x.marca?" "+esc(x.marca):""}</span>`:`<span class="fit">Especial a medida</span>`}<span>${esc(x.mat)}</span>${x.tras?`<span>Trasero ${x.tras}</span>`:""}${x.pz?`<span>${x.pz} piezas</span>`:""}</div>
         ${x.col&&x.col.length>1?`<div class="colors" title="Colores disponibles">${x.col.map(c=>`<i style="background:${COLORES[c]||"#999"}" title="${esc(c)}"></i>`).join("")}<small>${x.col.length} colores: ${x.col.join(", ").toLowerCase()}</small></div>`:""}
         <ul class="why">${(kind==="ideal"?why:why.slice(0,2)).map(w=>typeof w==="string"?`<li>${w}</li>`:`<li class="warn">${w.t}</li>`).join("")}</ul>
         <div class="price"><span class="now">${money(x.p)}</span>${off?`<s>${money(x.c)}</s><span class="off">${off}% OFF</span>`:""}</div>
@@ -505,12 +559,13 @@ function renderResults(){
     modelo: A.marca==="Otra marca" ? A.modelo : A.modelo,
     trasero: {entero:"Trasero entero",dividido:"Trasero dividido",nose:"Trasero: no sé"}[A.trasero],
     uso: A.uso.map(x=>USO_TXT[x]).join(", ") || null,
-    color: R.modo==="universal" && A.color ? `Color ${A.color.toLowerCase()}` : null,
+    color: A.color && (R.ideal?.col||[]).includes(A.color) ? `Color ${A.color.toLowerCase()}` : null,
   };
   const resumen = resumenTxt(lbl, R.ideal ? `Me recomendó: *${R.ideal.n}* (${money(R.ideal.p)}).` : "No encontré una funda para mi modelo en la web.");
-  const titulo = R.modo==="medida" ? `Tenemos tu funda a medida` : R.modo==="universal" ? "Encontramos tu funda" : "Te la buscamos";
-  const lead = R.modo==="medida" ? `Para tu ${esc(autoTxt())}, según cómo es el asiento trasero y para qué lo usás. Tocá cualquier respuesta para cambiarla.`
-    : R.modo==="universal" ? `No tenemos todavía una funda a medida para el ${esc(autoTxt())}, pero la universal le calza bien. Tocá cualquier respuesta para cambiarla.`
+  const titulo = R.modo==="especial" ? "Tenemos la funda especial para tu modelo"
+    : R.modo==="universal" ? `Tu funda ideal es la universal${R.ideal.marca?" "+esc(R.ideal.marca):""}` : "Te la buscamos";
+  const lead = R.modo==="especial" ? `Hecha a medida para tu ${esc(autoTxt())}, según cómo es el asiento trasero y para qué lo usás. Tocá cualquier respuesta para cambiarla.`
+    : R.modo==="universal" ? `Con asiento trasero entero, la universal${R.ideal.marca?" de "+esc(R.ideal.marca):""} le queda bien a tu ${esc(autoTxt())}. Tocá cualquier respuesta para cambiarla.`
     : `Para el ${esc(autoTxt())} con ${A.tipo==="util"?"esta configuración de asientos":"trasero dividido"} la funda universal no calza bien. Somos fabricantes: escribinos y te decimos qué funda le va o si te la hacemos a medida.`;
   $("#app").innerHTML = `<section class="step-anim">
     <div class="eyebrow">Listo</div>
@@ -520,8 +575,8 @@ function renderResults(){
     ${notaBox()}
     ${R.modo==="consulta" ? `<div class="empty"><b>Mandanos tus respuestas por WhatsApp</b> y un asesor te contesta con la funda indicada para tu vehículo.<div class="actions"><a class="btn wa" href="${waLink(resumen)}" target="_blank" rel="noopener">Consultar por WhatsApp</a></div></div>` : card(R.ideal,"ideal","",R)}
     ${(R.otra||R.eco)?`<div class="alts"><h2>También te pueden servir</h2>
-      ${R.otra?card(R.otra,"", A.trasero==="nose" ? `Si tu trasero es ${R.otra.tras||"distinto"}` : `Otra funda para tu ${esc(A.modelo)}`):""}
-      ${R.eco?card(R.eco,"",`Opción más económica · ${money(R.ideal.p-R.eco.p)} menos`):""}
+      ${R.otra?card(R.otra,"", A.trasero==="nose" && R.otra.tras ? `Si tu trasero es ${R.otra.tras}` : `Otra especial para tu ${esc(A.modelo)}`):""}
+      ${R.eco?card(R.eco,"",`${A.trasero==="nose"?"Si tu trasero es entero · ":""}Universal, ${money(R.ideal.p-R.eco.p)} menos`):""}
     </div>`:""}
     <div class="upsell"><h2>Completá el interior</h2>
       <p class="lead">Con las fundas nuevas, el volante y las alfombras hacen la diferencia.</p>
@@ -536,7 +591,7 @@ function renderResults(){
       <p>Mandale tus respuestas a un asesor y te ayuda a decidir: calce, colores, envío y formas de pago.</p>
       <a class="btn wa full" href="${waLink(resumen)}" target="_blank" rel="noopener">Enviar mis respuestas por WhatsApp</a>
     </div>`:""}
-    <p class="note">Las fundas a medida y su tipo de trasero (enterizo o repartido) salen de la ficha de cada producto en la tienda. Precios, cuotas y descuento por efectivo o transferencia de la tienda online, actualizados el ${ACTUALIZADO}; pueden cambiar sin aviso.</p>
+    <p class="note">Especiales: hechas a medida de cada modelo. Universales: para asiento trasero entero, de cada marca o genérica. Precios, cuotas y descuento por efectivo o transferencia de la tienda online, actualizados el ${ACTUALIZADO}; pueden cambiar sin aviso.</p>
     <div style="margin-top:18px"><button type="button" class="btn ghost" id="restart">Empezar de nuevo</button></div>
   </section>`;
   document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ const i=+c.dataset.step; if(i>=0){ step=i; render(); } }));

@@ -15,29 +15,31 @@ end
 
 # ---------- Datos de cada funda que la tienda no tiene en forma ordenada ----------
 # La clave es la que usa plantilla.html (lista MARCAS). Se reconoce el producto por el final de su link.
+# Especial o universal se decide por el precio (ver ESPECIAL_DESDE). marca: universal de esa marca (nil = genérica).
 # tras: "entero" | "dividido" | nil (la ficha no lo aclara)
 CONFIG = {
-  "universal"=>{slug:"fundas-asientos-autos-completa-3d01o", tras:"entero", pz:10, mat:"Símil cuero", universal:true, n:"Fundas Asientos Autos Completa (Universal)"},
-  "fordEnt" =>{slug:"fundas-asientos-autos-completa-ford-q0ali", tras:"entero", mat:"Ecocuero"},
-  "fordRep" =>{slug:"fundas-asientos-autos-especial-repartida-ford-ecosport-focus-s5ugj", tras:"dividido", pz:13, mat:"Símil cuero + elastizado", logo:true},
-  "ranger"  =>{slug:"fundas-asientos-autos-completa-ford-ranger-16ky2", tras:nil, mat:"Símil cuero"},
-  "fiatEnt" =>{slug:"fundas-asientos-autos-fiat-completa-11iia", tras:"entero", mat:"Ecocuero"},
-  "mobi"    =>{slug:"fundas-asientos-fiat-mobi-6idoq", tras:nil, mat:"Símil cuero", extra:"Apoyacabeza fijo y detalles bordados, como el original del Mobi."},
-  "chevEnt" =>{slug:"fundas-asientos-completa-chevrolet-10j8j", tras:"entero", mat:"Ecocuero"},
-  "chevRep" =>{slug:"fundas-asientos-autos-especial-chevrolet-corsa-agile-meriva-nc27g", tras:"dividido", mat:"Símil cuero"},
-  "celta"   =>{slug:"fundas-asientos-autos-especial-chevrolet-celta-c-abertura-1q6af", tras:nil, mat:"Símil cuero", extra:"Con abertura en el respaldo delantero, para la palanca de rebatimiento del Celta 3 puertas."},
-  "vwGol"   =>{slug:"fundas-asiento-completa-volkswagen-1v587", tras:nil, mat:"Ecocuero premium", logo:true},
-  "vwBora"  =>{slug:"fundas-asientos-autos-especial-bora-vento-amarok-8zk5x", tras:nil, mat:"Símil cuero"},
-  "vwSuran" =>{slug:"fundas-asientos-autos-completa-volkswagen-suran-fox-repartid-kab4g", tras:"dividido", mat:"Símil cuero"},
-  "renEnt"  =>{slug:"fundas-asientos-renault-completa-1w6em", tras:"entero", mat:"Ecocuero"},
-  "stepway" =>{slug:"fundas-asientos-autos-especial-stepway-1eyf3", tras:"dividido", mat:"Símil cuero"},
-  "renAncha"=>{slug:"fundas-asientos-autos-especial-repartida-duster-fluence-alaskar-74cm8", tras:"entero", mat:"Símil cuero"},
-  "kangoo"  =>{slug:"fundas-asientos-autos-especial-renault-kango-1gf8r", tras:"dividido", mat:"Símil cuero"},
-  "peuEnt"  =>{slug:"funda-cubre-asiento-peugeot-106-205-206-207-306-307-w74fc", tras:"entero", mat:"Ecocuero"},
-  "partner" =>{slug:"fundas-asientos-autos-especial-peugueot-partner-repartida-1iqdk", tras:"dividido", mat:"Símil cuero"},
-  "toyota"  =>{slug:"funda-cubre-asiento-toyota-etios-yaris-bb4db", tras:"entero", mat:"Ecocuero"},
+  "universal"=>{slug:"fundas-asientos-autos-completa-3d01o", marca:nil, tras:"entero", pz:10, mat:"Símil cuero", n:"Fundas Asientos Autos Completa (Universal)"},
+  "fordEnt" =>{slug:"fundas-asientos-autos-completa-ford-q0ali", marca:"Ford", tras:"entero", mat:"Ecocuero"},
+  "fordRep" =>{slug:"fundas-asientos-autos-especial-repartida-ford-ecosport-focus-s5ugj", tras:"dividido", pz:13, mat:"Símil cuero + elastizado", logo:true, extra:"Respaldo y asiento trasero repartidos 1/3 – 2/3 del lado del acompañante."},
+  "ranger"  =>{slug:"fundas-asientos-autos-completa-ford-ranger-16ky2", tras:"entero", mat:"Ecocuero", extra:"Versión Enteriza XL, para butacas más grandes."},
+  "fiatEnt" =>{slug:"fundas-asientos-autos-fiat-completa-11iia", marca:"Fiat", tras:"entero", mat:"Ecocuero"},
+  "mobi"    =>{slug:"fundas-asientos-fiat-mobi-6idoq", tras:"entero", mat:"Símil cuero", extra:"Apoyacabeza fijo y detalles bordados, como el original del Mobi."},
+  "chevEnt" =>{slug:"fundas-asientos-completa-chevrolet-10j8j", marca:"Chevrolet", tras:"entero", mat:"Ecocuero"},
+  "chevRep" =>{slug:"fundas-asientos-autos-especial-chevrolet-corsa-agile-meriva-nc27g", tras:"dividido", mat:"Símil cuero", extra:"Respaldo trasero repartido del lado del acompañante y asiento trasero entero.", logo:true},
+  "celta"   =>{slug:"fundas-asientos-autos-especial-chevrolet-celta-c-abertura-1q6af", marca:"Chevrolet", tras:nil, mat:"Símil cuero", extra:"Con abertura en el respaldo delantero, para la palanca de rebatimiento del Celta 3 puertas."},
+  "vwGol"   =>{slug:"fundas-asiento-completa-volkswagen-1v587", marca:"Volkswagen", tras:"entero", mat:"Ecocuero premium", logo:true},
+  "vwBora"  =>{slug:"fundas-asientos-autos-especial-bora-vento-amarok-8zk5x", tras:"entero", mat:"Símil cuero", extra:"Modelo ancho, para butacas anchas.", logo:true},
+  "vwSuran" =>{slug:"fundas-asientos-autos-completa-volkswagen-suran-fox-repartid-kab4g", tras:"dividido", mat:"Ecocuero", extra:"Respaldo trasero repartido al medio y asiento trasero entero."},
+  "renEnt"  =>{slug:"fundas-asientos-renault-completa-1w6em", marca:"Renault", tras:"entero", mat:"Ecocuero"},
+  "stepway" =>{slug:"fundas-asientos-autos-especial-stepway-1eyf3", tras:"dividido", mat:"Símil cuero", extra:"Respaldo trasero repartido del lado del acompañante."},
+  "renAncha"=>{slug:"fundas-asientos-autos-especial-repartida-duster-fluence-alaskar-74cm8", tras:"entero", mat:"Símil cuero", pz:11, extra:"Modelo ancho, para butacas anchas.", logo:true},
+  "kangoo"  =>{slug:"fundas-asientos-autos-especial-renault-kango-1gf8r", tras:"dividido", mat:"Símil cuero", extra:"Respaldo y asiento trasero repartidos del lado del acompañante."},
+  "peuEnt"  =>{slug:"funda-cubre-asiento-peugeot-106-205-206-207-306-307-w74fc", marca:"Peugeot", tras:"entero", mat:"Ecocuero"},
+  "partner" =>{slug:"fundas-asientos-autos-especial-peugueot-partner-repartida-1iqdk", tras:"dividido", mat:"Símil cuero", extra:"Respaldo y asiento trasero repartidos del lado del conductor.", logo:true},
+  "toyota"  =>{slug:"funda-cubre-asiento-toyota-etios-yaris-bb4db", marca:"Toyota", tras:"entero", mat:"Ecocuero"},
 }
 # Nombres cortos para mostrar (si no está acá, se usa el nombre de la tienda)
+ESPECIAL_DESDE = 50000   # desde este precio la funda es "especial"; por debajo, "universal"
 NOMBRES = {
   "fordEnt"=>"Funda Ecocuero Ford Fiesta - Ka - Focus - Orion", "fordRep"=>"Fundas Especial Repartida Ford EcoSport - Focus",
   "fiatEnt"=>"Fundas Ecocuero Fiat Palio - Duna - Siena - Uno - 147", "chevEnt"=>"Funda Ecocuero Chevrolet Corsa - Classic - Agile - Astra",
@@ -101,10 +103,11 @@ prods.each do |p|
   unless p["disp"]
     sin_stock << p["n"]; next
   end
+  cat = p["p"].to_f >= ESPECIAL_DESDE ? "especial" : "universal"
   base = { n:p["n"], p:p["p"], c:p["c"], tr:p["tr"], q:p["q"], u:p["url"].sub(TIENDA, ""), img:foto(p) }
   clave, cfg = CONFIG.find { |_, c| c[:slug] == p["slug"] }
   if clave
-    fundas[clave] = base.merge(cfg.reject { |k, _| k == :slug }).merge(n:(cfg[:n] || NOMBRES[clave] || p["n"]), col:p["col"])
+    fundas[clave] = base.merge(cfg.reject { |k, _| k == :slug }).merge(n:(cfg[:n] || NOMBRES[clave] || p["n"]), col:p["col"], cat:cat)
   elsif es_funda.(p)
     clave = "t_" + p["slug"].gsub(/[^a-z0-9]/, "_")
     nn = norm.(p["n"])
@@ -116,7 +119,8 @@ prods.each do |p|
       end
     end
     tras = p["n"] =~ /repartid/i ? "dividido" : p["n"] =~ /enteriz/i ? "entero" : nil
-    fundas[clave] = base.merge(tras:tras, mat:(p["n"] =~ /ecocuero/i ? "Ecocuero" : "Símil cuero"), col:p["col"])
+    marca = lista.map(&:first).uniq.size == 1 ? lista[0][0] : nil
+    fundas[clave] = base.merge(tras:tras, mat:(p["n"] =~ /ecocuero/i ? "Ecocuero" : "Símil cuero"), col:p["col"], cat:cat, marca:(cat == "universal" ? marca : nil))
     nuevos[clave] = lista unless lista.empty?
     puts "  Funda nueva: #{p["n"]} → #{lista.empty? ? "NO nombra un modelo conocido: agregarla a mano en plantilla.html" : lista.map { |a| a.join(" ") }.join(", ")}"
   else
