@@ -1,0 +1,40 @@
+ASISTENTE DE FUNDAS – LUBRICENTRO EL TRIUNFO
+============================================
+
+Link público: https://asistente-fundas-eltriunfo.netlify.app
+
+CÓMO FUNCIONA
+- GitHub (proyecto "asistente-fundas-eltriunfo") guarda los archivos.
+  Un robot corre todos los días a las 6:00, lee la tienda (precios, stock, colores,
+  cuotas y productos nuevos) y, SOLO si algo cambió, actualiza la página.
+- Netlify publica automáticamente cada cambio en el mismo link.
+- Si un producto se queda sin stock, deja de recomendarse solo. Vuelve cuando hay stock.
+- Fundas nuevas cargadas en la tienda: si el nombre nombra un modelo que ya está en la
+  lista (ej. "Fundas Fiat Cronos Repartida"), aparecen solas al día siguiente para ese
+  modelo. Si no, el robot lo avisa y hay que agregar el modelo en archivos/plantilla.html.
+- Todo lo que no es funda (cubre volantes, alfombras, etc.) aparece solo en
+  "Completá el interior".
+
+FORZAR UNA ACTUALIZACIÓN YA
+- GitHub > asistente-fundas-eltriunfo > Actions > Actualizar precios > Run workflow.
+
+SI CAMBIAMOS TEXTOS, PREGUNTAS, MODELOS O EL WHATSAPP
+- Se edita archivos/plantilla.html y se sube a GitHub en la carpeta "archivos"
+  (Add file > Upload files, reemplazando el existente).
+- Lista de marcas y modelos: buscar  const MARCAS  en plantilla.html.
+- Datos de cada funda (enteriza/repartida, material, piezas): CONFIG en archivos/actualizar.rb.
+
+RESPALDO SIN GITHUB
+- Doble clic en "Actualizar precios.command" (la primera vez: clic derecho > Abrir).
+  Se actualiza la carpeta "subir-a-netlify", que se puede arrastrar en Netlify > Deploys.
+
+ARCHIVOS
+- archivos/plantilla.html : diseño y lógica del asistente.
+- archivos/actualizar.rb  : lee la tienda y arma la página.
+- archivos/logo.webp y archivos/fotos : logo y fotos (las fotos se bajan solas de la tienda).
+- netlify.toml : le dice a Netlify que publique la carpeta subir-a-netlify.
+- robot-github-actualizar.yml : copia del robot que está en GitHub (.github/workflows/actualizar.yml).
+
+MEDICIÓN
+- En archivos/plantilla.html buscar  const GA_ID = ""  y pegar el ID de Google Analytics 4.
+- Los links a la tienda llevan utm_source=asistente&utm_campaign=asistente_fundas.

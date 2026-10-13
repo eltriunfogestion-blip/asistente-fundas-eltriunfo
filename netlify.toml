@@ -1,0 +1,4 @@
+# Netlify publica la carpeta que arma el robot
+[build]
+  publish = "subir-a-netlify"
+  command = ""

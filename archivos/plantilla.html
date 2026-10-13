@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Asistente El Triunfo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: una sola columna tipo "tarjeta de asesor", un paso por pantalla, navegación fija abajo; resultado = funda ideal + alternativas */
+:root{
+  --bg:#F4F4F1; --surface:#FFFFFF; --ink:#141414; --muted:#5C5C58; --line:#DEDED8;
+  --soft:#ECECE6; --accent:#F1C40F; --accent-ink:#141414; --accent-text:#8A6A00; --good:#0B815A; --warn:#A65A00;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(0,0,0,.07);
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B0B0B; --surface:#171717; --ink:#F2F2EE; --muted:#A8A8A2; --line:#2E2E2B;
+  --soft:#222220; --accent:#F1C40F; --accent-ink:#141414; --accent-text:#F1C40F; --good:#3FD39C; --warn:#F2B25C;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0B0B0B; --surface:#171717; --ink:#F2F2EE; --muted:#A8A8A2; --line:#2E2E2B;
+  --soft:#222220; --accent:#F1C40F; --accent-ink:#141414; --accent-text:#F1C40F; --good:#3FD39C; --warn:#F2B25C;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3); color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);margin:0}
+body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;padding:0 16px 120px}
+.wrap{max-width:680px;margin:0 auto}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:18px 8px}
+header.top .logo{background:#000;border-radius:12px;padding:6px 10px;display:flex}
+header.top img{height:36px;width:auto;display:block}
+.wa-mini{font-size:13px;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap}
+.wa-mini:hover{color:var(--ink);border-color:var(--ink)}
+
+.progress{display:flex;align-items:center;gap:12px;margin:14px 0 22px}
+.bar{flex:1;height:6px;background:var(--soft);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .35s ease}
+.progress span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:.005em}
+h1{font-size:clamp(28px,5.8vw,36px);line-height:1.1;font-weight:700}
+.lead{color:var(--muted);margin:8px 0 22px;max-width:56ch}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text);margin-bottom:8px}
+
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.opts.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.opts.one{grid-template-columns:1fr}
+@media (max-width:520px){.opts.three{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.opt{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0;transition:border-color .15s,box-shadow .15s}
+.opt:hover{border-color:var(--muted)}
+.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.opt[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.opt b{font-family:var(--f-display);font-size:19px;font-weight:700;line-height:1.2}
+.opt small{color:var(--muted);font-size:14px;line-height:1.4}
+.opt .ico{height:44px;display:flex;align-items:flex-end;color:var(--ink)}
+.opt .ico svg{height:100%;width:auto}
+.opt .tag{align-self:flex-start;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--soft);color:var(--ink);padding:3px 8px;border-radius:999px}
+.opt .tag.hot{background:var(--accent);color:var(--accent-ink)}
+.opt.row{flex-direction:row;align-items:center;gap:14px}
+.opt.row > div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.opt.wide{grid-column:1/-1}
+.opt.swatch{flex-direction:row;align-items:center;gap:12px}
+.opt.swatch i{width:26px;height:26px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1.5px rgba(127,127,127,.45)}
+.check{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line);flex:none;display:grid;place-items:center}
+.opt[aria-pressed="true"] .check{background:var(--accent);border-color:var(--accent)}
+.opt[aria-pressed="true"] .check::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+
+.search{display:flex;gap:8px;margin:0 0 16px}
+.search input,#nota,#libre{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px}
+.search input:focus,#nota:focus,#libre:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.group-t{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+.nota-label{display:block;font-weight:600;margin:22px 0 8px}
+.nota-label span{font-weight:400;color:var(--muted);font-size:14px;margin-left:6px}
+#nota{resize:vertical;min-height:84px}
+.nota-help{font-size:13px;color:var(--muted);margin:6px 0 0}
+.nota-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 18px;font-size:15px}
+.nota-box q{font-style:italic}
+.nota-box small{display:block;color:var(--muted);margin-top:6px;font-size:13px}
+.tip{background:var(--soft);border-radius:14px;padding:14px 16px;margin-top:16px;font-size:15px}
+.tip b{font-weight:700}
+.nomatch{margin-top:16px;display:none}
+.nomatch.on{display:block}
+
+/* nav */
+nav.foot{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+nav.foot .wrap{display:flex;gap:10px;justify-content:space-between}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;font-weight:700;border-radius:999px;padding:13px 22px;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:8px;line-height:1.2}
+.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary[disabled]{opacity:.4;cursor:not-allowed}
+.btn.ghost{color:var(--ink);border:1.5px solid var(--line)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.wa{background:#1FA855;color:#fff}
+.btn.full{width:100%}
+
+/* resultados */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 22px}
+.chip{all:unset;cursor:pointer;font-size:13px;padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.chip:hover{border-color:var(--ink)}
+.chip:focus-visible{outline:3px solid var(--accent)}
+.card{background:var(--surface);border:1.5px solid var(--line);border-radius:20px;overflow:hidden;min-width:0}
+.card.ideal{border-color:var(--accent);box-shadow:var(--shadow)}
+.ideal .head{background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:8px 18px}
+.card .body{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;padding:18px}
+.ideal .body{grid-template-columns:200px minmax(0,1fr)}
+@media (max-width:560px){.card .body,.ideal .body{grid-template-columns:1fr}.card .pic{max-width:260px;margin:0 auto}}
+.pic{aspect-ratio:1;border-radius:14px;background:#fff;overflow:hidden;width:100%}
+.pic img{width:100%;height:100%;object-fit:cover;display:block}
+.card h3{font-size:21px;line-height:1.2;font-weight:700}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.meta span{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--soft)}
+.meta span.fit{background:var(--accent);color:var(--accent-ink)}
+.colors{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 6px}
+.colors i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(127,127,127,.45)}
+.colors small{color:var(--muted);font-size:13px;margin-left:4px}
+.why{list-style:none;padding:0;margin:10px 0 14px;display:grid;gap:7px}
+.why li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;font-size:15px;line-height:1.4}
+.why li::before{content:"";width:16px;height:16px;margin-top:2px;border-radius:50%;background:var(--good);transform:scale(.6)}
+.why li.warn::before{background:var(--warn)}
+.price{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.price .now{font-family:var(--f-display);font-weight:700;font-size:30px;font-variant-numeric:tabular-nums}
+.price s{color:var(--muted);font-size:14px}
+.price .off{font-size:12px;font-weight:700;color:var(--accent-text)}
+.cuotas{font-size:15px;margin-top:2px}
+.cuotas strong{color:var(--good)}
+.transfer{font-size:14px;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.actions .btn{padding:11px 18px;font-size:15px}
+.alts{display:grid;gap:14px;margin-top:22px}
+.alts h2,.more h2,.upsell h2{font-size:22px;font-weight:700}
+.alt-label{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:14px 18px 0}
+.upsell{margin-top:30px}
+.upsell .lead{margin:6px 0 14px}
+.list{display:grid;gap:10px;margin-top:12px}
+.li{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;text-decoration:none;color:var(--ink)}
+.li:hover{border-color:var(--ink)}
+.li .pic{border-radius:10px}
+.li b{font-size:15px;font-weight:600;line-height:1.3;display:block}
+.li small{color:var(--muted);font-size:12px}
+.li .pr{font-weight:700;font-variant-numeric:tabular-nums;text-align:right;font-size:15px}
+.li .pr small{display:block;font-weight:500}
+.note{font-size:13px;color:var(--muted);margin-top:26px;line-height:1.5}
+.cta-box{margin-top:26px;background:var(--soft);border-radius:20px;padding:20px;display:grid;gap:12px}
+.cta-box h2{font-size:22px}
+.cta-box p{margin:0;color:var(--muted)}
+.empty{background:var(--surface);border:1.5px dashed var(--line);border-radius:16px;padding:20px;color:var(--muted)}
+.empty b{color:var(--ink)}
+.step-anim{animation:in .3s ease both}
+@keyframes in{from{transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.step-anim{animation:none}.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="logo"><img src="__LOGO__" alt="Lubricentro El Triunfo"></span>
+    <a class="wa-mini" id="waTop" href="#" target="_blank" rel="noopener">Hablar con un asesor</a>
+  </header>
+  <div class="progress" id="progress"><div class="bar"><i id="barFill" style="width:12%"></i></div><span id="stepCount">Paso 1 de 5</span></div>
+  <main id="app"></main>
+</div>
+<nav class="foot" id="foot"><div class="wrap">
+  <button class="btn ghost" id="back" type="button">Atrás</button>
+  <button class="btn primary" id="next" type="button">Siguiente</button>
+</div></nav>
+<script>
+const ACTUALIZADO = "__FECHA__";
+</script>
+<script>
+/* ===== Configuración de la tienda ===== */
+const WHATSAPP = "541149700716";            // número que recibe las consultas
+const TIENDA = "https://lubricentroeltriunfo.com.ar";
+const $ = s => document.querySelector(s);
+const money = n => "$" + Math.round(n).toLocaleString("es-AR");
+const waLink = txt => "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(txt);
+/* Links a la tienda con origen marcado: así las ventas que vienen del asistente se ven en las estadísticas */
+const tienda = u => TIENDA + u + (u.includes("?")?"&":"?") + "utm_source=asistente&utm_medium=recomendacion&utm_campaign=asistente_fundas";
+/* ===== Medición (Google Analytics 4) ===== */
+const GA_ID = "";   // pegar acá el ID de medición, ej: "G-ABC123XYZ". Vacío = no mide nada
+if (GA_ID){
+  const g = document.createElement("script"); g.async = true;
+  g.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID; document.head.appendChild(g);
+  window.dataLayer = window.dataLayer || []; window.gtag = function(){ dataLayer.push(arguments); };
+  gtag("js", new Date()); gtag("config", GA_ID);
+}
+function track(ev, p={}){ try{ if (window.gtag) gtag("event", ev, p); }catch(e){} }
+document.addEventListener("click", e=>{
+  const a = e.target.closest("a[href]"); if (!a) return;
+  if (a.href.includes("wa.me")) track("click_whatsapp", {lugar: a.id || a.className});
+  else if (a.href.includes("utm_source=asistente")) track("click_comprar", {producto: a.dataset.n || ""});
+});
+$("#waTop").href = waLink("Hola! Estoy buscando fundas para los asientos de mi auto y quería asesoramiento.");
+
+/* ===== Catálogo =====
+   Lo genera archivos/actualizar.rb leyendo la tienda: precios, stock, fotos y colores.
+   FUNDAS: {clave: {n, p, c, tr, q, tras, pz, mat, col, universal, extra, logo, u, img}}
+   ACCESORIOS: [{n, p, c, tr, q, u, img}]
+   NUEVOS: fundas nuevas de la tienda que el robot asignó solo a un modelo: {clave: [[marca, modelo], ...]} */
+__DATA__
+
+/* ===== Marcas y modelos =====
+   t: tipo de vehículo (auto | suv | pickup | util)   f: fundas a medida para ese modelo */
+const MARCAS = {
+  "Ford":[
+    {m:"Fiesta",t:"auto",f:["fordEnt"]},{m:"Ka",t:"auto",f:["fordEnt"]},{m:"Focus (hasta 2013)",t:"auto",f:["fordEnt"]},
+    {m:"Focus III (2013 en adelante)",t:"auto",f:["fordRep"]},{m:"Orion",t:"auto",f:["fordEnt"]},{m:"EcoSport",t:"suv",f:["fordRep"]},
+    {m:"Territory",t:"suv",f:[]},{m:"Kuga",t:"suv",f:[]},{m:"Bronco Sport",t:"suv",f:[]},
+    {m:"Ranger",t:"pickup",f:["ranger"]},{m:"Maverick",t:"pickup",f:[]},{m:"Transit",t:"util",f:[]}],
+  "Fiat":[
+    {m:"Palio",t:"auto",f:["fiatEnt"]},{m:"Siena",t:"auto",f:["fiatEnt"]},{m:"Uno",t:"auto",f:["fiatEnt"]},{m:"Duna",t:"auto",f:["fiatEnt"]},
+    {m:"147",t:"auto",f:["fiatEnt"]},{m:"Mobi",t:"auto",f:["mobi"]},{m:"Cronos",t:"auto",f:[]},{m:"Argo",t:"auto",f:[]},
+    {m:"Pulse",t:"suv",f:[]},{m:"Fastback",t:"suv",f:[]},{m:"Strada",t:"pickup",f:[]},{m:"Toro",t:"pickup",f:[]},
+    {m:"Fiorino",t:"util",f:[]},{m:"Doblò",t:"util",f:[]}],
+  "Chevrolet":[
+    {m:"Corsa",t:"auto",f:["chevEnt","chevRep"]},{m:"Classic",t:"auto",f:["chevEnt"]},{m:"Agile",t:"auto",f:["chevEnt","chevRep"]},
+    {m:"Astra",t:"auto",f:["chevEnt"]},{m:"Meriva",t:"auto",f:["chevRep"]},{m:"Celta",t:"auto",f:["celta"]},
+    {m:"Onix",t:"auto",f:[]},{m:"Prisma",t:"auto",f:[]},{m:"Cruze",t:"auto",f:[]},{m:"Spin",t:"auto",f:[]},
+    {m:"Tracker",t:"suv",f:[]},{m:"S10",t:"pickup",f:[]},{m:"Montana",t:"pickup",f:[]}],
+  "Volkswagen":[
+    {m:"Gol Trend",t:"auto",f:["vwGol"]},{m:"Voyage",t:"auto",f:["vwGol"]},{m:"Bora",t:"auto",f:["vwBora"]},{m:"Vento",t:"auto",f:["vwBora"]},
+    {m:"Suran",t:"auto",f:["vwSuran"]},{m:"Fox",t:"auto",f:["vwSuran"]},{m:"Gol (modelo anterior)",t:"auto",f:[]},
+    {m:"Polo",t:"auto",f:[]},{m:"Virtus",t:"auto",f:[]},{m:"T-Cross",t:"suv",f:[]},{m:"Nivus",t:"suv",f:[]},{m:"Taos",t:"suv",f:[]},
+    {m:"Amarok",t:"pickup",f:["vwBora"]},{m:"Saveiro",t:"pickup",f:[]}],
+  "Renault":[
+    {m:"Clio",t:"auto",f:["renEnt"]},{m:"Sandero",t:"auto",f:["renEnt"]},{m:"Mégane",t:"auto",f:["renEnt"]},{m:"R19",t:"auto",f:["renEnt"]},
+    {m:"Sandero Stepway",t:"auto",f:["stepway"]},{m:"Fluence",t:"auto",f:["renAncha"]},{m:"Logan",t:"auto",f:[]},{m:"Kwid",t:"auto",f:[]},
+    {m:"Duster",t:"suv",f:["stepway","renAncha"]},{m:"Captur",t:"suv",f:["stepway"]},
+    {m:"Alaskan",t:"pickup",f:["renAncha"]},{m:"Oroch",t:"pickup",f:[]},{m:"Kangoo",t:"util",f:["kangoo"]},{m:"Master",t:"util",f:[]}],
+  "Peugeot":[
+    {m:"106",t:"auto",f:["peuEnt"]},{m:"205",t:"auto",f:["peuEnt"]},{m:"206",t:"auto",f:["peuEnt"]},{m:"207",t:"auto",f:["peuEnt"]},
+    {m:"306",t:"auto",f:["peuEnt"]},{m:"307",t:"auto",f:["peuEnt"]},{m:"208",t:"auto",f:[]},{m:"308",t:"auto",f:[]},{m:"408",t:"auto",f:[]},
+    {m:"2008",t:"suv",f:[]},{m:"3008",t:"suv",f:[]},{m:"Partner",t:"util",f:["partner"]},{m:"Expert",t:"util",f:[]}],
+  "Toyota":[
+    {m:"Etios",t:"auto",f:["toyota"]},{m:"Yaris",t:"auto",f:["toyota"]},{m:"Corolla",t:"auto",f:[]},
+    {m:"Corolla Cross",t:"suv",f:[]},{m:"SW4",t:"suv",f:[]},{m:"Hilux",t:"pickup",f:[]},{m:"Hiace",t:"util",f:[]}],
+  "Otra marca":[],
+};
+/* Fundas nuevas que el robot encontró en la tienda: se suman a los modelos que nombra el producto */
+Object.entries(NUEVOS).forEach(([k, lista])=> lista.forEach(([marca, modelo])=>{
+  const x = (MARCAS[marca]||[]).find(y=>y.m===modelo); if (x && !x.f.includes(k)) x.f.push(k);
+}));
+const TIPOS = {
+  auto:  {label:"Auto",       s:"Hatchback, sedán o familiar", ico:'<svg viewBox="0 0 64 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M4 23v-6l6-2 8-8h20l10 8 10 2v6H4z"/><circle cx="16" cy="24" r="4.5" fill="var(--surface)"/><circle cx="48" cy="24" r="4.5" fill="var(--surface)"/></svg>'},
+  suv:   {label:"SUV",        s:"EcoSport, Duster, Tracker…",  ico:'<svg viewBox="0 0 64 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M4 23v-8l6-1 5-9h33l8 9 4 1v8H4z"/><circle cx="16" cy="24" r="4.5" fill="var(--surface)"/><circle cx="48" cy="24" r="4.5" fill="var(--surface)"/></svg>'},
+  pickup:{label:"Pick up",    s:"Ranger, Amarok, Hilux…",      ico:'<svg viewBox="0 0 64 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M3 23v-9h26V5h14l7 9h11v9H3z"/><circle cx="15" cy="24" r="4.5" fill="var(--surface)"/><circle cx="49" cy="24" r="4.5" fill="var(--surface)"/></svg>'},
+  util:  {label:"Utilitario", s:"Kangoo, Partner, Fiorino…",   ico:'<svg viewBox="0 0 64 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M4 23V5h40l9 9 7 2v7H4z"/><circle cx="16" cy="24" r="4.5" fill="var(--surface)"/><circle cx="48" cy="24" r="4.5" fill="var(--surface)"/></svg>'},
+};
+const COLORES = {Negro:"#151515",Gris:"#8A8C8E",Azul:"#1E4FA3",Rojo:"#C62828",Blanco:"#F4F4F4",Violeta:"#6A3FA0",Rosa:"#E58FB0",Beige:"#D8C3A0",Amarillo:"#F1C40F",Verde:"#2E7D32"};
+
+/* ===== Preguntas ===== */
+const A = { tipo:null, marca:null, modelo:null, trasero:null, uso:[], nota:"", color:null };
+const modeloSel = ()=> (MARCAS[A.marca]||[]).find(x=>x.m===A.modelo) || null;
+const fundasModelo = ()=> (modeloSel()?.f || []).filter(k=>FUNDAS[k]).map(k=>({k, ...FUNDAS[k]}));
+const sinAMedida = ()=> !!A.modelo && !fundasModelo().length;
+const autoTxt = ()=> A.marca==="Otra marca" || !A.marca ? (A.modelo||"tu vehículo") : `${A.marca} ${A.modelo}`;
+const seatIco = split => `<svg viewBox="0 0 64 40" aria-hidden="true">${split
+  ? `<rect x="4" y="2" width="19" height="22" rx="4" fill="var(--accent)"/><rect x="26" y="2" width="34" height="22" rx="4" fill="var(--accent)"/><rect x="4" y="27" width="19" height="11" rx="3" fill="currentColor"/><rect x="26" y="27" width="34" height="11" rx="3" fill="currentColor"/>`
+  : `<rect x="4" y="2" width="56" height="22" rx="4" fill="var(--accent)"/><rect x="4" y="27" width="56" height="11" rx="3" fill="currentColor"/>`}</svg>`;
+
+const STEPS = [
+  { id:"tipo", title:"¿Qué tipo de vehículo tenés?", lead:"Así te mostramos solo las fundas que le calzan.",
+    opts:()=> Object.entries(TIPOS).map(([k,t])=>({v:k,b:t.label,s:t.s,ico:t.ico})) },
+  { id:"marca", title:"¿De qué marca es?", lead:"Fabricamos fundas a medida para los modelos más vendidos del país.",
+    opts:()=> Object.keys(MARCAS).map(b=>{
+      const n = MARCAS[b].filter(x=>x.t===A.tipo && x.f.length).length;
+      return b==="Otra marca" ? {v:b,b:"Otra marca",s:"Citroën, Nissan, Jeep, Honda…"}
+        : {v:b,b, s: n ? `${n} ${n===1?"modelo":"modelos"} con funda a medida` : "Funda universal o a consultar"};
+    }), cls:"three" },
+  { id:"modelo", title:()=> A.marca==="Otra marca" ? "¿Qué vehículo es?" : `¿Qué modelo de ${A.marca}?`,
+    lead:()=> A.marca==="Otra marca" ? "Escribí marca y modelo, por ejemplo: Citroën C3, Nissan Versa." : "Elegí tu modelo. Si no aparece, escribilo abajo.",
+    custom: renderModelo },
+  { id:"trasero", title:"¿Cómo es el asiento trasero?", lead:"Es lo más importante para que la funda calce perfecto.",
+    custom: renderTrasero },
+  { id:"uso", multi:true, optional:true, title:"¿Qué te importa más?", lead:"Podés elegir varias, o saltear este paso.",
+    custom: renderUso,
+    opts:()=>[
+      {v:"chicos",  b:"Viajo con chicos o silla de bebé"},
+      {v:"mascotas",b:"Llevo a mi mascota"},
+      {v:"trabajo", b:"Lo uso para trabajar (remis, app, reparto)"},
+      {v:"renovar", b:"Quiero tapar un tapizado gastado o roto"},
+      {v:"cuidar",  b:"Quiero cuidar el tapizado nuevo"},
+    ], cls:"one"},
+  { id:"color", when:()=> !!FUNDAS.universal && FUNDAS.universal.col.length>1 && sinAMedida() && A.trasero!=="dividido" && A.tipo!=="util", title:"¿De qué color la querés?",
+    lead:"La funda universal viene en varios colores. El negro es el más elegido: no se marca y combina con todo.",
+    opts:()=> FUNDAS.universal.col.map(c=>({v:c,b:c,sw:COLORES[c]||"#999",tag:c==="Negro"?"Más elegido":null})), cls:"three" },
+];
+
+/* ===== Navegación ===== */
+let step = 0;
+const fn = v => typeof v==="function" ? v() : v;
+function answered(s){ if (s.optional) return true; const v=A[s.id]; return s.multi ? v.length>0 : v!==null && v!==""; }
+function vis(){ return STEPS.filter(s=>!s.when || s.when()); }
+const esc = t => String(t).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();
+function render(){
+  const app = $("#app"), V = vis();
+  window.scrollTo({top:0});
+  if (step >= V.length) return renderResults();
+  const s = V[step];
+  track(step===0 ? "asistente_inicio" : "asistente_paso", {paso: s.id, numero: step+1});
+  $("#progress").hidden = false;
+  $("#barFill").style.width = ((step+1)/(V.length+1)*100)+"%";
+  $("#stepCount").textContent = `Paso ${step+1} de ${V.length}`;
+  app.innerHTML = `<section class="step-anim">
+      ${step===0 ? `<div class="eyebrow">Tu funda ideal en 1 minuto</div>` : ""}
+      <h1>${fn(s.title)}</h1><p class="lead">${fn(s.lead)}</p><div id="body"></div></section>`;
+  if (s.custom) s.custom($("#body")); else renderOpts(s, $("#body"));
+  $("#foot").hidden = false;
+  $("#back").style.visibility = step===0 ? "hidden" : "visible";
+  $("#next").textContent = step===V.length-1 ? "Ver mi funda ideal" : "Siguiente";
+  $("#next").disabled = !answered(s);
+}
+function renderOpts(s, el){
+  const opts = s.opts();
+  el.innerHTML = `<div class="opts ${s.cls||""}">` + opts.map((o,i)=>{
+    const on = s.multi ? A[s.id].includes(o.v) : A[s.id]===o.v;
+    return `<button type="button" class="opt ${s.multi?"row":""} ${o.sw?"swatch":""} ${o.wide?"wide":""}" data-v="${esc(o.v)}" aria-pressed="${on}">
+      ${s.multi?`<span class="check"></span><div>`:""}
+      ${o.sw?`<i style="background:${o.sw}"></i><div>`:""}
+      ${o.ico?`<span class="ico" aria-hidden="true">${o.ico}</span>`:""}
+      ${o.tag?`<span class="tag ${o.hot!==false?"hot":""}">${o.tag}</span>`:""}
+      <b>${esc(o.b)}</b>${o.s?`<small>${o.s}</small>`:""}
+      ${s.multi||o.sw?`</div>`:""}</button>`;
+  }).join("") + `</div>`;
+  el.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
+    const v = b.dataset.v;
+    if (s.multi){
+      const arr = A[s.id];
+      A[s.id] = arr.includes(v) ? arr.filter(x=>x!==v) : [...arr, v];
+      b.setAttribute("aria-pressed", A[s.id].includes(v));
+    } else {
+      if (s.id==="tipo" && A.tipo!==v){ A.marca = null; A.modelo = null; }
+      if (s.id==="marca" && A.marca!==v){ A.modelo = null; }
+      A[s.id] = v;
+      el.querySelectorAll(".opt").forEach(x=>x.setAttribute("aria-pressed", x===b));
+      $("#next").disabled = false;
+      setTimeout(()=>{ step++; render(); }, 220);
+    }
+  }));
+}
+function renderModelo(el){
+  const all = MARCAS[A.marca];
+  const otra = A.marca==="Otra marca";
+  const mios = all.filter(x=>x.t===A.tipo), otros = all.filter(x=>x.t!==A.tipo);
+  const known = all.some(x=>x.m===A.modelo);
+  const btn = x => `<button type="button" class="opt" data-v="${esc(x.m)}" aria-pressed="${A.modelo===x.m}">
+      ${x.f.length?`<span class="tag hot">A medida</span>`:""}<b>${esc(x.m)}</b>
+      <small>${x.f.length?"Funda especial para tu modelo":"Universal o a consultar"}</small></button>`;
+  el.innerHTML = (otra ? "" : `
+    <div class="search"><input id="q" type="search" placeholder="Buscar modelo…" autocomplete="off" aria-label="Buscar modelo"></div>
+    ${mios.length?`<div class="opts three" id="g1">${mios.map(btn).join("")}</div>`:""}
+    ${otros.length?`<div class="group-t" id="t2">${mios.length?"Otros modelos de "+esc(A.marca):"Modelos de "+esc(A.marca)}</div><div class="opts three" id="g2">${otros.map(btn).join("")}</div>`:""}
+    <p class="empty nomatch" id="nomatch">No lo encontramos en la lista. Escribilo abajo y te recomendamos igual.</p>`) + `
+    <label class="nota-label" for="libre">${otra ? "Marca y modelo" : "¿No está tu modelo?"} ${otra?"":"<span>Escribilo acá</span>"}</label>
+    <input id="libre" maxlength="60" placeholder="${otra?"Ej: Nissan Versa":"Ej: "+esc(A.marca)+" …"}" value="${!known && A.modelo ? esc(A.modelo) : ""}" autocomplete="off">`;
+  el.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
+    A.modelo = b.dataset.v; $("#libre").value = "";
+    el.querySelectorAll(".opt").forEach(x=>x.setAttribute("aria-pressed", x===b));
+    $("#next").disabled = false; setTimeout(()=>{ step++; render(); }, 220);
+  }));
+  const q = $("#q");
+  if (q) q.addEventListener("input", ()=>{
+    const v = norm(q.value); let n = 0;
+    el.querySelectorAll(".opt").forEach(b=>{ const ok = !v || norm(b.dataset.v).includes(v); b.hidden = !ok; if (ok) n++; });
+    $("#nomatch").classList.toggle("on", n===0);
+    const t2 = $("#t2"); if (t2) t2.hidden = ![...el.querySelectorAll("#g2 .opt")].some(b=>!b.hidden);
+  });
+  $("#libre").addEventListener("input", e=>{
+    const v = e.target.value.trim();
+    const hit = all.find(x=>norm(x.m)===norm(v));
+    A.modelo = hit ? hit.m : (v || null);
+    el.querySelectorAll(".opt").forEach(x=>x.setAttribute("aria-pressed", x.dataset.v===A.modelo));
+    $("#next").disabled = !A.modelo;
+  });
+  $("#libre").addEventListener("keydown", e=>{ if (e.key==="Enter" && A.modelo){ step++; render(); } });
+  if (otra) $("#libre").focus();
+}
+function renderTrasero(el){
+  const opts = [
+    {v:"entero",   b:"Entero",               s:"Respaldo y asiento de una sola pieza", ico:seatIco(false)},
+    {v:"dividido", b:"Dividido / rebatible", s:"Se rebate por partes (1/3 – 2/3)",      ico:seatIco(true)},
+    {v:"nose",     b:"No estoy seguro/a",    s:"Te mostramos las dos opciones", wide:true},
+  ];
+  renderOpts({id:"trasero", opts:()=>opts}, el);
+  el.insertAdjacentHTML("beforeend", `<div class="tip"><b>¿Cómo me doy cuenta?</b> Mirá el respaldo trasero desde el baúl: si tiene dos trabas o se puede bajar solo una parte, es dividido. Las fundas <b>repartidas</b> respetan ese corte; las <b>enterizas</b> y la universal son para asiento entero.</div>`);
+}
+function renderUso(el){
+  el.innerHTML = `<div id="usoOpts"></div>
+    <label class="nota-label" for="nota">¿Algo más que quieras contarnos? <span>Opcional</span></label>
+    <textarea id="nota" rows="3" maxlength="400" placeholder="Ej: las butacas tienen airbag lateral, el apoyacabeza es fijo, quiero que tenga el logo…">${esc(A.nota)}</textarea>
+    <p class="nota-help">Lo tenemos en cuenta para la recomendación y se lo pasamos al asesor si nos escribís.</p>`;
+  renderOpts(STEPS.find(s=>s.id==="uso"), $("#usoOpts"));
+  $("#nota").addEventListener("input", e=>{ A.nota = e.target.value; });
+}
+$("#back").addEventListener("click",()=>{ if(step>0){ step--; render(); } });
+$("#next").addEventListener("click",()=>{ if(!$("#next").disabled){ step++; render(); } });
+
+/* ===== Motor de recomendación ===== */
+const NOTA_REGLAS = [
+  {k:"airbag",   re:/airbag|bolsa de aire/i,                         t:"airbag en las butacas"},
+  {k:"mascotas", re:/perr|gat|mascota|pelo/i,                        t:"mascotas"},
+  {k:"chicos",   re:/nen|beb|hij|chic|sillita|silla/i,               t:"chicos a bordo"},
+  {k:"trabajo",  re:/remis|taxi|uber|didi|cabify|app|reparto|flete/i, t:"uso para trabajar"},
+  {k:"renovar",  re:/roto|rota|gastad|manch|quemad|rajad/i,          t:"tapizado gastado"},
+  {k:"logo",     re:/logo|emblema/i,                                 t:"funda con logo"},
+  {k:"fijo",     re:/apoya ?cabeza.*fij|fij.*apoya ?cabeza/i,        t:"apoyacabeza fijo"},
+];
+function notaFlags(){ return NOTA_REGLAS.filter(r=>r.re.test(A.nota||"")); }
+function U(){ return [...new Set([...A.uso, ...notaFlags().map(r=>r.k)])]; }
+
+function recommend(){
+  const lista = fundasModelo();
+  const permiteUniversal = !!FUNDAS.universal && A.trasero!=="dividido" && A.tipo!=="util";
+  if (lista.length){
+    const calza = x => !x.tras || A.trasero==="nose" || x.tras===A.trasero;
+    let orden = [...lista].sort((a,b)=> (calza(b)-calza(a)) || (A.trasero==="nose" ? a.p-b.p : 0));
+    const ideal = orden[0];
+    const otra = orden[1] || null;
+    let eco = null;
+    if (permiteUniversal && ideal.p > FUNDAS.universal.p && !(otra && otra.p<=FUNDAS.universal.p))
+      eco = {k:"universal", ...FUNDAS.universal};
+    return {modo:"medida", ideal, otra, eco, calzaIdeal: calza(ideal)};
+  }
+  if (permiteUniversal) return {modo:"universal", ideal:{k:"universal", ...FUNDAS.universal}};
+  return {modo:"consulta"};
+}
+
+/* ===== Textos ===== */
+function whyList(x, R){
+  const r = [], u = U();
+  if (x.universal){
+    r.push("Calza en vehículos con dos butacas delanteras y asiento trasero entero, con apoyacabezas desmontables.");
+    if (A.marca && A.marca!=="Otra marca" && A.modelo) r.push(`Todavía no tenemos una funda a medida para el ${esc(autoTxt())}: la universal es la opción que mejor le queda.`);
+    if (A.color) r.push(`La elegiste en ${A.color.toLowerCase()}. También viene en ${x.col.filter(c=>c!==A.color).join(", ").toLowerCase()}.`);
+  } else {
+    r.push(`Hecha a medida para el ${esc(autoTxt())}: calza justo, sin arrugas ni partes que se corran.`);
+    if (x.tras==="dividido") r.push("Repartida: el trasero viene cortado 1/3 – 2/3, así podés seguir rebatiendo el asiento.");
+    if (x.tras==="entero") r.push("Enteriza: pensada para asiento trasero de una sola pieza.");
+    if (x.extra) r.push(x.extra);
+    if (x.logo) r.push("Con el logo de la marca bordado en el respaldo.");
+  }
+  if (u.includes("mascotas") || u.includes("chicos")) r.push(`${x.mat.split(" ")[0]}: se limpia con un paño húmedo, ideal ${u.includes("mascotas")&&u.includes("chicos")?"con chicos y mascotas":u.includes("mascotas")?"si viajás con tu mascota":"con chicos a bordo"}.`);
+  if (u.includes("trabajo")) r.push("Material resistente al uso diario: aguanta muchas horas de manejo y subidas y bajadas de pasajeros.");
+  if (u.includes("renovar")) r.push("Cubre el tapizado completo: tapa roturas y manchas y el interior queda como nuevo.");
+  if (u.includes("cuidar")) r.push("Protege el tapizado original del desgaste, el sol y las manchas.");
+  if (x.pz) r.push(`Juego completo de ${x.pz} piezas, con ganchos de ajuste incluidos.`);
+  if (R && R.modo==="medida" && x===R.ideal && !R.calzaIdeal) r.push({warn:true, t:`Ojo: esta funda es ${x.tras==="entero"?"enteriza":"repartida"} y nos dijiste que tu trasero es ${A.trasero}. Consultanos antes de comprar.`});
+  if (!x.tras && !x.universal && A.trasero!=="nose") r.push({warn:true, t:"La ficha no aclara si el trasero es entero o dividido: confirmalo con un asesor antes de comprar."});
+  if (u.includes("airbag")) r.push({warn:true, t:"Si tus butacas tienen airbag lateral, consultanos antes de comprar para confirmar que la funda no lo tape."});
+  if (u.includes("fijo") && x.universal) r.push({warn:true, t:"La universal está pensada para apoyacabezas desmontables. Con apoyacabeza fijo, consultanos."});
+  return r;
+}
+function card(x, kind, label, R){
+  const off = x.c && x.c>x.p ? Math.round((1-x.p/x.c)*100) : 0;
+  const msg = `Hola! Usé el asistente de la web para mi ${autoTxt()} y me recomendó:\n*${x.n}*${x.universal&&A.color?` (color ${A.color.toLowerCase()})`:""} - ${money(x.p)}\n${TIENDA+x.u}\n\n¿Está disponible? ¿Cuánto sale el envío?`;
+  const why = whyList(x, R);
+  return `<article class="card ${kind}">
+    ${kind==="ideal"?`<div class="head">Tu funda ideal</div>`:label?`<div class="alt-label">${label}</div>`:""}
+    <div class="body">
+      <div class="pic"><img src="${x.img}" alt="${esc(x.n)}" loading="lazy"></div>
+      <div style="min-width:0">
+        <h3>${esc(x.n)}</h3>
+        <div class="meta">${x.universal?`<span>Universal</span>`:`<span class="fit">A medida</span>`}<span>${esc(x.mat)}</span>${x.tras?`<span>Trasero ${x.tras}</span>`:""}${x.pz?`<span>${x.pz} piezas</span>`:""}</div>
+        ${x.col&&x.col.length>1?`<div class="colors" title="Colores disponibles">${x.col.map(c=>`<i style="background:${COLORES[c]||"#999"}" title="${esc(c)}"></i>`).join("")}<small>${x.col.length} colores: ${x.col.join(", ").toLowerCase()}</small></div>`:""}
+        <ul class="why">${(kind==="ideal"?why:why.slice(0,2)).map(w=>typeof w==="string"?`<li>${w}</li>`:`<li class="warn">${w.t}</li>`).join("")}</ul>
+        <div class="price"><span class="now">${money(x.p)}</span>${off?`<s>${money(x.c)}</s><span class="off">${off}% OFF</span>`:""}</div>
+        <div class="cuotas"><strong>${x.q} cuotas sin interés</strong> de ${money(x.p/x.q)}</div>
+        <div class="transfer">o ${money(x.tr)} en efectivo o transferencia</div>
+        <div class="actions">
+          <a class="btn primary" href="${tienda(x.u)}" data-n="${esc(x.n)}" target="_blank" rel="noopener">Comprar en la tienda</a>
+          <a class="btn wa" href="${waLink(msg)}" target="_blank" rel="noopener">Consultar por WhatsApp</a>
+        </div>
+      </div>
+    </div></article>`;
+}
+
+/* ===== Resultados ===== */
+function notaBox(){
+  if (!A.nota.trim()) return "";
+  const f = notaFlags();
+  return `<div class="nota-box">Nos contaste: <q>${esc(A.nota.trim())}</q>
+    <small>${f.length ? "Lo tuvimos en cuenta: " + f.map(r=>r.t).join(", ") + "." : "Se lo pasamos al asesor si nos escribís por WhatsApp."}</small></div>`;
+}
+const USO_TXT = {chicos:"Chicos a bordo",mascotas:"Mascotas",trabajo:"Uso para trabajar",renovar:"Tapizado gastado",cuidar:"Cuidar tapizado nuevo"};
+function chipsHtml(lbl){
+  const V = vis();
+  return Object.entries(lbl).filter(([,v])=>v).map(([k,v])=>`<button type="button" class="chip" data-step="${V.findIndex(s=>s.id===k)}">${esc(v)} ✎</button>`).join("");
+}
+function resumenTxt(lbl, extra){
+  return `Hola! Hice el test de fundas de la web:\n• ${Object.values(lbl).filter(Boolean).join("\n• ")}`
+    + (A.nota.trim() ? `\n\nComentario: "${A.nota.trim()}"` : "")
+    + `\n\n${extra}\nQuisiera que un asesor me ayude a decidir.`;
+}
+function renderResults(){
+  $("#progress").hidden = true; $("#foot").hidden = true;
+  const R = recommend();
+  track("asistente_resultado", {modo:R.modo, producto:R.ideal?.n || "consulta", vehiculo:autoTxt()});
+  const lbl = {
+    tipo: TIPOS[A.tipo]?.label,
+    marca: A.marca==="Otra marca" ? null : A.marca,
+    modelo: A.marca==="Otra marca" ? A.modelo : A.modelo,
+    trasero: {entero:"Trasero entero",dividido:"Trasero dividido",nose:"Trasero: no sé"}[A.trasero],
+    uso: A.uso.map(x=>USO_TXT[x]).join(", ") || null,
+    color: R.modo==="universal" && A.color ? `Color ${A.color.toLowerCase()}` : null,
+  };
+  const resumen = resumenTxt(lbl, R.ideal ? `Me recomendó: *${R.ideal.n}* (${money(R.ideal.p)}).` : "No encontré una funda para mi modelo en la web.");
+  const titulo = R.modo==="medida" ? `Tenemos tu funda a medida` : R.modo==="universal" ? "Encontramos tu funda" : "Te la buscamos";
+  const lead = R.modo==="medida" ? `Para tu ${esc(autoTxt())}, según cómo es el asiento trasero y para qué lo usás. Tocá cualquier respuesta para cambiarla.`
+    : R.modo==="universal" ? `No tenemos todavía una funda a medida para el ${esc(autoTxt())}, pero la universal le calza bien. Tocá cualquier respuesta para cambiarla.`
+    : `Para el ${esc(autoTxt())} con ${A.tipo==="util"?"esta configuración de asientos":"trasero dividido"} la funda universal no calza bien. Somos fabricantes: escribinos y te decimos qué funda le va o si te la hacemos a medida.`;
+  $("#app").innerHTML = `<section class="step-anim">
+    <div class="eyebrow">Listo</div>
+    <h1>${titulo}</h1>
+    <p class="lead">${lead}</p>
+    <div class="chips">${chipsHtml(lbl)}</div>
+    ${notaBox()}
+    ${R.modo==="consulta" ? `<div class="empty"><b>Mandanos tus respuestas por WhatsApp</b> y un asesor te contesta con la funda indicada para tu vehículo.<div class="actions"><a class="btn wa" href="${waLink(resumen)}" target="_blank" rel="noopener">Consultar por WhatsApp</a></div></div>` : card(R.ideal,"ideal","",R)}
+    ${(R.otra||R.eco)?`<div class="alts"><h2>También te pueden servir</h2>
+      ${R.otra?card(R.otra,"", A.trasero==="nose" ? `Si tu trasero es ${R.otra.tras||"distinto"}` : `Otra funda para tu ${esc(A.modelo)}`):""}
+      ${R.eco?card(R.eco,"",`Opción más económica · ${money(R.ideal.p-R.eco.p)} menos`):""}
+    </div>`:""}
+    <div class="upsell"><h2>Completá el interior</h2>
+      <p class="lead">Con las fundas nuevas, el volante y las alfombras hacen la diferencia.</p>
+      <div class="list">${ACCESORIOS.map(x=>`<a class="li" href="${tienda(x.u)}" data-n="${esc(x.n)}" target="_blank" rel="noopener">
+        <div class="pic"><img src="${x.img}" alt="" loading="lazy"></div>
+        <div style="min-width:0"><b>${esc(x.n)}</b><small>o ${money(x.tr)} en efectivo o transferencia</small></div>
+        <div class="pr">${money(x.p)}<small>${x.q}× ${money(x.p/x.q)}</small></div></a>`).join("")}
+      </div>
+    </div>
+    ${R.modo!=="consulta"?`<div class="cta-box">
+      <h2>¿Te quedó alguna duda?</h2>
+      <p>Mandale tus respuestas a un asesor y te ayuda a decidir: calce, colores, envío y formas de pago.</p>
+      <a class="btn wa full" href="${waLink(resumen)}" target="_blank" rel="noopener">Enviar mis respuestas por WhatsApp</a>
+    </div>`:""}
+    <p class="note">Las fundas a medida y su tipo de trasero (enterizo o repartido) salen de la ficha de cada producto en la tienda. Precios, cuotas y descuento por efectivo o transferencia de la tienda online, actualizados el ${ACTUALIZADO}; pueden cambiar sin aviso.</p>
+    <div style="margin-top:18px"><button type="button" class="btn ghost" id="restart">Empezar de nuevo</button></div>
+  </section>`;
+  document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ const i=+c.dataset.step; if(i>=0){ step=i; render(); } }));
+  $("#restart").addEventListener("click",()=>{ Object.assign(A,{tipo:null,marca:null,modelo:null,trasero:null,uso:[],nota:"",color:null}); step=0; render(); });
+}
+render();
+</script>
+</body>
+</html>
